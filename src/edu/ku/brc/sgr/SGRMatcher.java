@@ -39,6 +39,8 @@ public class SGRMatcher
 {
     private final CommonsHttpSolrServer server;
     private final SolrQuery baseQuery;
+    
+    public final String serverUrl;
 
     private SGRMatcher(final String url,
                        final int minDocFreq,
@@ -47,24 +49,26 @@ public class SGRMatcher
                        final String similarityFields) 
           throws MalformedURLException {
           
-          server = new CommonsHttpSolrServer(url);
-          
-          baseQuery = new SolrQuery();
-          baseQuery.setQueryType("/" + MoreLikeThisParams.MLT);
-          baseQuery.set(CommonParams.FL, "score");
-          baseQuery.setRows(1);
-          baseQuery.set(MoreLikeThisParams.MIN_DOC_FREQ, minDocFreq);
-          baseQuery.set(MoreLikeThisParams.MIN_TERM_FREQ, minTermFreq);
-          baseQuery.set(MoreLikeThisParams.BOOST, boostInterstingTerms);
-          baseQuery.set(MoreLikeThisParams.SIMILARITY_FIELDS, similarityFields);
-      }
+        serverUrl = url;  
+        server = new CommonsHttpSolrServer(url);
+      
+        baseQuery = new SolrQuery();
+        baseQuery.setQueryType("/" + MoreLikeThisParams.MLT);
+        baseQuery.set(CommonParams.FL, "score");
+        baseQuery.setRows(1);
+        baseQuery.set(MoreLikeThisParams.MIN_DOC_FREQ, minDocFreq);
+        baseQuery.set(MoreLikeThisParams.MIN_TERM_FREQ, minTermFreq);
+        baseQuery.set(MoreLikeThisParams.BOOST, boostInterstingTerms);
+        baseQuery.set(MoreLikeThisParams.SIMILARITY_FIELDS, similarityFields);
+    }
     
     public static Factory getFactory() { return new Factory(); }
     
+    public SolrQuery getBaseQuery() { return baseQuery.getCopy(); }
+    
     public MatchResults match(Matchable matchable)
     {
-        SolrQuery query = baseQuery.getCopy();
-        return matchable.doMatch(server, query);
+        return matchable.doMatch(server, getBaseQuery());
     }
     
     public static class Factory {

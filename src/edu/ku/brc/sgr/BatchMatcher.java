@@ -17,13 +17,6 @@
  */
 package edu.ku.brc.sgr;
 
-import java.net.MalformedURLException;
-import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
-import org.apache.solr.common.params.CommonParams;
-import org.apache.solr.common.params.MoreLikeThisParams;
-
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 
 /**
@@ -42,35 +35,13 @@ import com.google.common.collect.ImmutableSet;
 
 public class BatchMatcher
 {
-    final private CommonsHttpSolrServer server;
-    final private String serverUrl;
-    final private SolrQuery baseQuery;
-    final private int nThreads;
+    private final SGRMatcher matcher;
+    public final int nThreads;
     
-    /**
-     * Only instantiated by {@link BatchMatcher.Factory}
-     */
-    private BatchMatcher(final String url,
-                       final int threads,
-                       final int minDocFreq,
-                       final int minTermFreq,
-                       final boolean boostInterstingTerms,
-                       final String similarityFields) 
-        throws MalformedURLException {
-        
-        serverUrl = url;
-        server = new CommonsHttpSolrServer(url);
-        
-        this.nThreads = threads;
-
-        baseQuery = new SolrQuery();
-        baseQuery.setQueryType("/" + MoreLikeThisParams.MLT);
-        baseQuery.set(CommonParams.FL, "score");
-        baseQuery.setRows(1);
-        baseQuery.set(MoreLikeThisParams.MIN_DOC_FREQ, minDocFreq);
-        baseQuery.set(MoreLikeThisParams.MIN_TERM_FREQ, minTermFreq);
-        baseQuery.set(MoreLikeThisParams.BOOST, boostInterstingTerms);
-        baseQuery.set(MoreLikeThisParams.SIMILARITY_FIELDS, similarityFields);
+    public BatchMatcher(SGRMatcher matcher, int nThreads)
+    {
+        this.matcher = matcher;
+        this.nThreads = nThreads;
     }
     
     public BatchMatchResults match(final Iterable<Matchable> toMatch,
@@ -84,14 +55,15 @@ public class BatchMatcher
         if (resuming) {
             // Make sure we are resuming a set of results with the same query.
             if (!inResults.getBaseQuery().toString().equals(
-                    this.baseQuery.toString())) {
+                    matcher.getBaseQuery().toString())) {
                         throw new IllegalArgumentException(
                             "cannot resume batchmatch with inconsistent query");
             }
             results = inResults;
             completedIds = results.getCompletedIds();
         } else {
-            results = new BatchMatchResults(serverUrl, baseQuery);
+            results = new BatchMatchResults(matcher.serverUrl, 
+                                            matcher.getBaseQuery());
             completedIds = ImmutableSet.of();
         }
         
@@ -105,15 +77,13 @@ public class BatchMatcher
                 if (resuming && completedIds.contains(toMatch.getId())) {
                     return;
                 }
-                final MatchResults result = toMatch.doMatch(server, baseQuery);
-                results.addResult(result);
+                results.addResult(matcher.match(toMatch));
             }
         };
         
         final BlockingJobQueue<Matchable> jobs = 
             new BlockingJobQueue<Matchable>(nThreads, worker);
 
-        
         // GO.
         jobs.startThreads();
         
@@ -122,36 +92,5 @@ public class BatchMatcher
         jobs.waitForAllJobsToComplete();
         jobs.stopThreads();
         return results;        
-    }
-    
-
-    /**
-     * Get a mutable factory object which has public attributes to configure
-     * a {@link BatchMatcher}.  Calling build() will return an immutable
-     * {@link BatchMatcher} with the given setup. 
-     */
-    public static Factory getFactory() { return new Factory(); }
-    
-    public static class Factory {
-        public String serverUrl = "http://localhost:8983/solr";
-        public int nThreads = 4;
-        public String idSuffix = "";
-        public int minDocFreq = 1;
-        public int minTermFreq = 1;
-        public boolean boostInterestingTerms = true;
-        public String[] similarityFields = {
-                "collectors", 
-                "collector_number", 
-                "location", 
-                "date_collected", 
-                "date_split", 
-                "scientific_name" 
-                }; 
-        
-        public BatchMatcher build() throws MalformedURLException {
-            return new BatchMatcher(serverUrl, nThreads,
-                    minDocFreq, minTermFreq, boostInterestingTerms,
-                    Joiner.on(',').join(similarityFields));
-        }
     }
 }
