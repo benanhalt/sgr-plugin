@@ -42,24 +42,11 @@ public class SGRMatcher
     
     public final String serverUrl;
 
-    private SGRMatcher(final String url,
-                       final int minDocFreq,
-                       final int minTermFreq,
-                       final boolean boostInterstingTerms,
-                       final String similarityFields) 
-          throws MalformedURLException {
-          
+    private SGRMatcher(final String url, final SolrQuery baseQuery) throws MalformedURLException 
+    {
         serverUrl = url;  
         server = new CommonsHttpSolrServer(url);
-      
-        baseQuery = new SolrQuery();
-        baseQuery.setQueryType("/" + MoreLikeThisParams.MLT);
-        baseQuery.set(CommonParams.FL, "score");
-        baseQuery.setRows(1);
-        baseQuery.set(MoreLikeThisParams.MIN_DOC_FREQ, minDocFreq);
-        baseQuery.set(MoreLikeThisParams.MIN_TERM_FREQ, minTermFreq);
-        baseQuery.set(MoreLikeThisParams.BOOST, boostInterstingTerms);
-        baseQuery.set(MoreLikeThisParams.SIMILARITY_FIELDS, similarityFields);
+        this.baseQuery = baseQuery;
     }
     
     public static Factory getFactory() { return new Factory(); }
@@ -73,21 +60,29 @@ public class SGRMatcher
     
     public static class Factory {
         public String serverUrl = "http://localhost:8983/solr";
+        public int nRows = 10;
         public int minDocFreq = 1;
         public int minTermFreq = 1;
         public boolean boostInterestingTerms = true;
-        public String[] similarityFields = {
-                "collectors", 
-                "collector_number", 
-                "location", 
-                "date_collected", 
-                "date_split", 
-                "scientific_name" 
-                }; 
+        public String similarityFields = 
+            "collectors,collector_number,location,date_collected,date_split,scientific_name"; 
+        public String returnedFields = "*,score";
+        public String queryFields = "";
+        public String filterQuery = "";
         
         public SGRMatcher build() throws MalformedURLException {
-            return new SGRMatcher(serverUrl, minDocFreq, minTermFreq, 
-                    boostInterestingTerms, Joiner.on(',').join(similarityFields));
+            SolrQuery baseQuery = new SolrQuery();
+            baseQuery.setQueryType("/" + MoreLikeThisParams.MLT);
+            baseQuery.set(CommonParams.FL, returnedFields);
+            baseQuery.setRows(nRows);
+            baseQuery.set(MoreLikeThisParams.MIN_DOC_FREQ, minDocFreq);
+            baseQuery.set(MoreLikeThisParams.MIN_TERM_FREQ, minTermFreq);
+            baseQuery.set(MoreLikeThisParams.BOOST, boostInterestingTerms);
+            baseQuery.set(MoreLikeThisParams.SIMILARITY_FIELDS, similarityFields);
+            baseQuery.set(MoreLikeThisParams.QF, queryFields);
+            baseQuery.set(CommonParams.FQ, queryFields);
+            
+            return new SGRMatcher(serverUrl, baseQuery);
         }
     }    
 }

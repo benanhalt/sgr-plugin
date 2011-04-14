@@ -32,7 +32,7 @@ import com.google.common.collect.ImmutableSet;
  * Created Date: Apr 8, 2011
  *
  */
-public class BatchMatchResults
+public class BatchMatchResults implements BatchMatchResultAccumulator
 {
     final private SolrQuery baseQuery;
     final public String serverUrl;
@@ -45,16 +45,19 @@ public class BatchMatchResults
         this.serverUrl = serverUrl;
     }
     
+    @Override
     synchronized public void addResult(final MatchResults result) {
         matches.add(result);
     }
     
+    @Override
     synchronized public ImmutableSet<String> getCompletedIds() {
         final ImmutableSet.Builder<String> completed = ImmutableSet.builder();
         for (MatchResults r: matches) { completed.add(r.matchedId); }
         return completed.build();
     }
     
+    @Override
     public SolrQuery getBaseQuery() {
         return baseQuery.getCopy();
     }

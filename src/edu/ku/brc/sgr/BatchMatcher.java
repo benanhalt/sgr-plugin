@@ -17,6 +17,11 @@
  */
 package edu.ku.brc.sgr;
 
+import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.solr.client.solrj.SolrQuery;
+
 import com.google.common.collect.ImmutableSet;
 
 /**
@@ -37,36 +42,29 @@ public class BatchMatcher
 {
     private final SGRMatcher matcher;
     public final int nThreads;
+
+    private final BlockingJobQueue<Matchable> jobs;
+    private final Iterable<Matchable> items;
     
-    public BatchMatcher(SGRMatcher matcher, int nThreads)
+    private boolean used = false;
+    private final AtomicInteger nItemsSkipped = new AtomicInteger();
+
+    public BatchMatcher(final SGRMatcher matcher, final Iterator<? extends Matchable> toMatch,
+                        final BatchMatchResultAccumulator accumulator, int nThreads)
     {
         this.matcher = matcher;
         this.nThreads = nThreads;
-    }
-    
-    public BatchMatchResults match(final Iterable<Matchable> toMatch,
-                                   final BatchMatchResults inResults) {
-        // We are resuming if given a set of partial results.
-        final boolean resuming = (inResults != null);
+
+        final ImmutableSet<String> completedIds = accumulator.getCompletedIds();
+        final boolean resuming = (completedIds.size() > 0); 
         
-        final BatchMatchResults results;
-        final ImmutableSet<String> completedIds;
-        
-        if (resuming) {
-            // Make sure we are resuming a set of results with the same query.
-            if (!inResults.getBaseQuery().toString().equals(
-                    matcher.getBaseQuery().toString())) {
-                        throw new IllegalArgumentException(
-                            "cannot resume batchmatch with inconsistent query");
-            }
-            results = inResults;
-            completedIds = results.getCompletedIds();
-        } else {
-            results = new BatchMatchResults(matcher.serverUrl, 
-                                            matcher.getBaseQuery());
-            completedIds = ImmutableSet.of();
+        // Make sure accumaltor's stored query matches what we are using now.
+        if (!accumulator.getBaseQuery().toString().equals(
+                matcher.getBaseQuery().toString())) {
+                    throw new IllegalArgumentException(
+                        "cannot resume batchmatch with inconsistent query");
         }
-        
+
         // Setup work unit for threads.
         final BlockingJobQueue.Worker<Matchable> worker = 
             new BlockingJobQueue.Worker<Matchable>() 
@@ -75,22 +73,71 @@ public class BatchMatcher
             public void doWork(Matchable toMatch)
             {
                 if (resuming && completedIds.contains(toMatch.getId())) {
+                    nItemsSkipped.getAndIncrement();
                     return;
                 }
-                results.addResult(matcher.match(toMatch));
+                accumulator.addResult(matcher.match(toMatch));
             }
         };
         
-        final BlockingJobQueue<Matchable> jobs = 
-            new BlockingJobQueue<Matchable>(nThreads, worker);
+        jobs = new BlockingJobQueue<Matchable>(nThreads, worker);
 
-        // GO.
+        items = new Iterable<Matchable>()
+        {
+            @Override
+            public Iterator<Matchable> iterator() { return (Iterator<Matchable>) toMatch; }
+        };
+    }
+    
+    public void run()
+    {
+        if (used)
+        {
+            throw new IllegalStateException("BatchMatcher instance can only be used once.");
+        }
+        used = true;
+        
         jobs.startThreads();
         
-        for (Matchable item: toMatch) { jobs.addWork(item); }
+        for (Matchable item: items)
+        { 
+            jobs.addWork(item); 
+        }
         
         jobs.waitForAllJobsToComplete();
         jobs.stopThreads();
-        return results;        
+    }
+    
+    public SolrQuery getBaseQuery()
+    {
+        return matcher.getBaseQuery();
+    }
+    
+    public int getTotalCurrentlyQueued()
+    {
+        return jobs.getCurrentJobsQueued();
+    }
+    
+    public int getTotalQueued()
+    {
+        return jobs.getTotalJobsQueued();
+    }
+    
+    public int getTotalFinished()
+    {
+        return jobs.getTotalJobsFinished();
+    }
+    
+    public int getTotalSkipped()
+    {
+        return nItemsSkipped.get();
+    }
+    
+    public static SGRMatcher.Factory getMatcherFactory()
+    {
+        SGRMatcher.Factory factory = SGRMatcher.getFactory();
+        factory.nRows = 1;
+        factory.returnedFields = "id,score";
+        return factory;
     }
 }
