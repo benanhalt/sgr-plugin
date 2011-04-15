@@ -61,4 +61,10 @@ public class BatchMatchResults implements BatchMatchResultAccumulator
     public SolrQuery getBaseQuery() {
         return baseQuery.getCopy();
     }
+
+    @Override
+    public int nCompleted()
+    {
+        return matches.size();
+    }
 }

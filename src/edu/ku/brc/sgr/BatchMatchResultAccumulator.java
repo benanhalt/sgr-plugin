@@ -32,5 +32,6 @@ public interface BatchMatchResultAccumulator
 {
     void addResult(final MatchResults result);
     ImmutableSet<String> getCompletedIds();
+    int nCompleted();
     ModifiableSolrParams getBaseQuery();
 }
