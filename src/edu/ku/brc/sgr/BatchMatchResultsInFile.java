@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Set;
 
-import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.servlet.SolrRequestParsers;
 
@@ -45,12 +44,13 @@ public class BatchMatchResultsInFile implements BatchMatchResultAccumulator
 {
     public final boolean resuming;
     
-    private final SolrParams solrParams;
+    private final SGRMatcher matcher;
     private final Set<String> completedIds;
     private PrintWriter output;
     
     public BatchMatchResultsInFile(String fileName, SGRMatcher matcher) throws IOException
     {
+        this.matcher = matcher; 
         final File file = new File(fileName);
 
         BufferedReader in = null;
@@ -59,15 +59,18 @@ public class BatchMatchResultsInFile implements BatchMatchResultAccumulator
         } catch (FileNotFoundException e) {}
 
         resuming = (in != null);
-        
-        solrParams = resuming ?
-                SolrRequestParsers.parseQueryString(in.readLine())
-                :
-                matcher.getBaseQuery();        
 
         completedIds = Sets.newHashSet();
         if (resuming)
         {
+            SolrParams oldSolrParams = SolrRequestParsers.parseQueryString(in.readLine());
+            if ( !EquateSolrParams.equals(matcher.getBaseQuery(), oldSolrParams) ) 
+            {
+                in.close();
+                throw new IllegalArgumentException(
+                        "cannot resume batchmatch with inconsistent query");
+            }
+            
             while (true)
             {
                 final String line = in.readLine();
@@ -110,18 +113,15 @@ public class BatchMatchResultsInFile implements BatchMatchResultAccumulator
         return ImmutableSet.copyOf(completedIds);
     }
 
-    /* (non-Javadoc)
-     * @see edu.ku.brc.sgr.BatchMatchResultAccumulator#getBaseQuery()
-     */
-    @Override
-    public ModifiableSolrParams getBaseQuery()
-    {
-        return new ModifiableSolrParams(solrParams);
-    }
-
-    @Override
+     @Override
     public int nCompleted()
     {
         return completedIds.size();
+    }
+
+    @Override
+    public SGRMatcher getMatcher()
+    {
+        return matcher;
     }
 }

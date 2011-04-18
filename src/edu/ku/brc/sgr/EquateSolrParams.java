@@ -17,6 +17,10 @@
  */
 package edu.ku.brc.sgr;
 
+import java.util.Arrays;
+
+import org.apache.solr.common.params.SolrParams;
+
 import com.google.common.collect.ImmutableSet;
 
 /**
@@ -24,13 +28,25 @@ import com.google.common.collect.ImmutableSet;
  *
  * @code_status Alpha
  *
- * Created Date: Apr 14, 2011
+ * Created Date: Apr 15, 2011
  *
  */
-public interface BatchMatchResultAccumulator
+public class EquateSolrParams
 {
-    void addResult(final MatchResults result);
-    ImmutableSet<String> getCompletedIds();
-    int nCompleted();
-    SGRMatcher getMatcher();
+    public static boolean equals(SolrParams a, SolrParams b)
+    {
+        ImmutableSet<String> aParamNames = ImmutableSet.copyOf(a.getParameterNamesIterator());
+        ImmutableSet<String> bParamNames = ImmutableSet.copyOf(b.getParameterNamesIterator());
+        
+        if (!aParamNames.equals(bParamNames))
+            return false;
+        
+        for (String name: aParamNames)
+        {
+            if (!Arrays.equals(a.getParams(name), b.getParams(name)))
+                return false;
+        }
+        
+        return true;
+    }
 }

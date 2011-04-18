@@ -24,8 +24,6 @@ import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.MoreLikeThisParams;
 
-import com.google.common.base.Joiner;
-
 
 /**
  * @author ben
@@ -80,7 +78,7 @@ public class SGRMatcher
             baseQuery.set(MoreLikeThisParams.BOOST, boostInterestingTerms);
             baseQuery.set(MoreLikeThisParams.SIMILARITY_FIELDS, similarityFields);
             baseQuery.set(MoreLikeThisParams.QF, queryFields);
-            baseQuery.set(CommonParams.FQ, queryFields);
+            baseQuery.set(CommonParams.FQ, filterQuery);
             
             return new SGRMatcher(serverUrl, baseQuery);
         }

@@ -49,22 +49,15 @@ public class BatchMatcher
     private boolean used = false;
     private final AtomicInteger nItemsSkipped = new AtomicInteger();
 
-    public BatchMatcher(final SGRMatcher matcher, final Iterator<? extends Matchable> toMatch,
+    public BatchMatcher(final Iterator<? extends Matchable> toMatch,
                         final BatchMatchResultAccumulator accumulator, int nThreads)
     {
-        this.matcher = matcher;
+        this.matcher = accumulator.getMatcher();
         this.nThreads = nThreads;
 
         final ImmutableSet<String> completedIds = accumulator.getCompletedIds();
         final boolean resuming = (completedIds.size() > 0); 
         
-        // Make sure accumaltor's stored query matches what we are using now.
-        if (!accumulator.getBaseQuery().toString().equals(
-                matcher.getBaseQuery().toString())) {
-                    throw new IllegalArgumentException(
-                        "cannot resume batchmatch with inconsistent query");
-        }
-
         // Setup work unit for threads.
         final BlockingJobQueue.Worker<Matchable> worker = 
             new BlockingJobQueue.Worker<Matchable>() 

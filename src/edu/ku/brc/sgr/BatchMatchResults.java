@@ -20,8 +20,6 @@ package edu.ku.brc.sgr;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.solr.client.solrj.SolrQuery;
-
 import com.google.common.collect.ImmutableSet;
 
 /**
@@ -34,14 +32,14 @@ import com.google.common.collect.ImmutableSet;
  */
 public class BatchMatchResults implements BatchMatchResultAccumulator
 {
-    final private SolrQuery baseQuery;
+    final private SGRMatcher matcher;
     final public String serverUrl;
     
     final private List<MatchResults> matches = new LinkedList<MatchResults>();
     
     public BatchMatchResults(final String serverUrl,
-                             final SolrQuery basequery) {
-        this.baseQuery = basequery.getCopy();
+                             final SGRMatcher matcher) {
+        this.matcher = matcher;
         this.serverUrl = serverUrl;
     }
     
@@ -58,13 +56,15 @@ public class BatchMatchResults implements BatchMatchResultAccumulator
     }
     
     @Override
-    public SolrQuery getBaseQuery() {
-        return baseQuery.getCopy();
-    }
-
-    @Override
     public int nCompleted()
     {
         return matches.size();
+    }
+
+    @Override
+    public SGRMatcher getMatcher()
+    {
+        // TODO Auto-generated method stub
+        return matcher;
     }
 }
