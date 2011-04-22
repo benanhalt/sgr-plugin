@@ -17,6 +17,8 @@
  */
 package edu.ku.brc.sgr;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -33,14 +35,11 @@ import com.google.common.collect.ImmutableSet;
 public class BatchMatchResults implements BatchMatchResultAccumulator
 {
     final private SGRMatcher matcher;
-    final public String serverUrl;
     
     final private List<MatchResults> matches = new LinkedList<MatchResults>();
     
-    public BatchMatchResults(final String serverUrl,
-                             final SGRMatcher matcher) {
+    public BatchMatchResults(final SGRMatcher matcher) {
         this.matcher = matcher;
-        this.serverUrl = serverUrl;
     }
     
     @Override
@@ -53,6 +52,11 @@ public class BatchMatchResults implements BatchMatchResultAccumulator
         final ImmutableSet.Builder<String> completed = ImmutableSet.builder();
         for (MatchResults r: matches) { completed.add(r.matchedId); }
         return completed.build();
+    }
+    
+    public Collection<MatchResults> getResults()
+    {
+        return Collections.unmodifiableCollection(matches);
     }
     
     @Override

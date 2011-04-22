@@ -3,6 +3,6 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/lucene-solr"/>
-	<classpathentry kind="lib" path="lib/guava-r09.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/guava-r09.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
