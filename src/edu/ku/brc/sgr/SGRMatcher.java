@@ -23,7 +23,8 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.MoreLikeThisParams;
-
+import org.apache.solr.common.params.SolrParams;
+import org.apache.solr.servlet.SolrRequestParsers;
 
 /**
  * @author ben
@@ -56,6 +57,12 @@ public class SGRMatcher
         return matchable.doMatch(server, getBaseQuery());
     }
     
+    public boolean sameQueryAs(String query)
+    {
+        SolrParams params = SolrRequestParsers.parseQueryString(query);
+        return EquateSolrParams.equals(getBaseQuery(), params);
+    }
+    
     public static class Factory {
         public String serverUrl = "http://localhost:8983/solr";
         public int nRows = 10;
@@ -78,6 +85,7 @@ public class SGRMatcher
             baseQuery.set(MoreLikeThisParams.BOOST, boostInterestingTerms);
             baseQuery.set(MoreLikeThisParams.SIMILARITY_FIELDS, similarityFields);
             baseQuery.set(MoreLikeThisParams.QF, queryFields);
+            baseQuery.set(MoreLikeThisParams.PRESERVE_FIELDS, true);
             baseQuery.set(CommonParams.FQ, filterQuery);
             
             return new SGRMatcher(serverUrl, baseQuery);
