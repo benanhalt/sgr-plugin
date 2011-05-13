@@ -94,7 +94,16 @@ public class BatchMatcher
         
         for (Matchable item: items)
         { 
-            jobs.addWork(item); 
+            try
+            {
+                jobs.addWork(item);
+            } catch (Exception e)
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+                jobs.stopThreads();
+                return;
+            } 
         }
         
         jobs.waitForAllJobsToComplete();

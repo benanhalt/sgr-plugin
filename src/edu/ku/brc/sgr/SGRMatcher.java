@@ -69,6 +69,7 @@ public class SGRMatcher
         public int minDocFreq = 1;
         public int minTermFreq = 1;
         public boolean boostInterestingTerms = true;
+        public boolean docSupplied = false;
         public String similarityFields = 
             "collectors,collector_number,location,date_collected,date_split,scientific_name"; 
         public String returnedFields = "*,score";
@@ -83,6 +84,7 @@ public class SGRMatcher
             baseQuery.set(MoreLikeThisParams.MIN_DOC_FREQ, minDocFreq);
             baseQuery.set(MoreLikeThisParams.MIN_TERM_FREQ, minTermFreq);
             baseQuery.set(MoreLikeThisParams.BOOST, boostInterestingTerms);
+            baseQuery.set(MoreLikeThisParams.DOC_SUPPLIED, docSupplied);
             baseQuery.set(MoreLikeThisParams.SIMILARITY_FIELDS, similarityFields);
             baseQuery.set(MoreLikeThisParams.QF, queryFields);
             baseQuery.set(MoreLikeThisParams.PRESERVE_FIELDS, true);

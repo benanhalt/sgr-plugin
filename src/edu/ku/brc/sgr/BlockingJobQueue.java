@@ -39,15 +39,38 @@ public class BlockingJobQueue<T>
     private final AtomicInteger totalJobsFinished = new AtomicInteger();
     private final Worker<T> worker;
     private final List<Thread> threads;
+    private final ExceptionHandler<T> exceptionHandler;
+    
+    private Exception abortException = null;
     
     public interface Worker<T>
     {
         public void doWork(T work);
     }
+    
+    public interface ExceptionHandler<T>
+    {
+        public Exception handle(T work, Exception e);
+    }
 
     public BlockingJobQueue(final int nThreads, final Worker<T> processWork)
     {
+        this(nThreads, processWork, new ExceptionHandler<T>()
+        {
+            @Override
+            public Exception handle(T work, Exception e)
+            {
+                return e;
+            }
+        });
+        
+    }
+    
+    public BlockingJobQueue(final int nThreads, final Worker<T> processWork,
+                            final ExceptionHandler<T> exceptionHandler)
+    {
         this.worker = processWork;
+        this.exceptionHandler = exceptionHandler;
         
         threads = new ArrayList<Thread>(nThreads);
         for (int i = 0; i < nThreads; i++)
@@ -77,8 +100,13 @@ public class BlockingJobQueue<T>
         }            
     }
     
-    public void addWork(final T id)
+    public void addWork(final T id) throws Exception
     {
+        if (abortException != null)
+        {
+            throw abortException;
+        }
+        
         currentJobsQueued.incrementAndGet();
         try
         {
@@ -126,7 +154,12 @@ public class BlockingJobQueue<T>
         {
             try
             {
-                worker.doWork(workQueue.take());
+                T work = workQueue.take();
+                try { worker.doWork(work); }
+                catch (Exception e)
+                {
+                    abortException = exceptionHandler.handle(work, e);
+                }
                 finishedJob();
             } catch (InterruptedException e)
             {
