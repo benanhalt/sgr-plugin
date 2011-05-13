@@ -18,25 +18,31 @@ import edu.ku.brc.sgr.datamodel._
  * Created Date: May 4, 2011
  *
  */
+object TestSchema extends BatchMatchSchemaBase with tests.DroppableSchema 
+
 class BatchMatchSchemaTest extends SchemaTester with RunTestsInsideTransaction {
-  def schema = BatchMatchSchema
+  def schema = TestSchema
   
-  override def connectToDb() = Some(() => Session.create(
-          java.sql.DriverManager.getConnection(
+  override def connectToDb() = Some(() => {
+    val session = Session.create(
+            java.sql.DriverManager.getConnection(
               "jdbc:mysql://localhost/test", "root", "root"),
-          new org.squeryl.adapters.MySQLInnoDBAdapter)
-  )
+            new org.squeryl.adapters.MySQLInnoDBAdapter)
+    //session.setLogger(Console.println(_))
+    session
+  })
+
 
   
   test("insert result set") {
-      val bmrs = new BatchMatchResultSet("test", "testq")
+      val bmrs = new BatchMatchResultSet("test", "testq", Some(0))
       val inserted = schema.resultSets.insert(bmrs)
       val c : Long = from(schema.resultSets)(rs => compute(count));
       assert(c == 1)
   }
   
   test("foreign key test") {
-    val rSet = schema.resultSets.insert(new BatchMatchResultSet("test", "testq"))
+    val rSet = schema.resultSets.insert(new BatchMatchResultSet("test", "testq", Some(0)))
     
     try {
         val item = schema.items.insert(new BatchMatchResultItem(rSet.id + 1, "foo", 0, 0.0F))

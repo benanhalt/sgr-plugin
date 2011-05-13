@@ -7,6 +7,7 @@ import java.sql.Connection
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.{Schema, KeyedEntity, Session, SessionFactory, ForeignKeyDeclaration} 
 import org.squeryl.dsl.{OneToMany, ManyToOne}
+import org.squeryl.dsl.ast.TypedExpressionNode
 import org.squeryl.adapters.MySQLAdapter
 
 import com.google.common.collect.ImmutableSet
@@ -20,9 +21,12 @@ import sgr.SGRMatcher
 
 
 class BatchMatchResultSet(val name: String,
-                          val query: String) 
+                          val query: String,
+                          val recordSetID: Option[Long]) 
     extends KeyedEntity[Long] {
   
+    def this() = this("", "", Some(0))
+    
     val id : Long = 0
   
     lazy val items: OneToMany[BatchMatchResultItem] = BatchMatchSchema.setToItems.left(this)
@@ -33,6 +37,17 @@ class BatchMatchResultSet(val name: String,
       BatchMatchSchema.resultSets.delete(this.id)
     }
     
+    def getValues() : Array[Double] = transaction {
+      from(items)(i => select(i.maxScore)) map(_.asInstanceOf[Double]) toArray
+    }
+    
+    def getMax() : Double = transaction {
+      val maxScore : Option[Float] = from(items)(i => compute(max(i.maxScore)))
+      maxScore match {
+        case None => 0.0
+        case Some(f) => f.asInstanceOf[Double]
+      }
+    }
 }
                           
 class BatchMatchResultItem(val batchMatchResultSetId: Long,
@@ -47,7 +62,7 @@ class BatchMatchResultItem(val batchMatchResultSetId: Long,
 }
                            
                            
-object BatchMatchSchema extends Schema with tests.DroppableSchema {
+class BatchMatchSchemaBase extends Schema {
     val resultSets = table[BatchMatchResultSet]
     val items = table[BatchMatchResultItem]
     
@@ -69,15 +84,21 @@ object BatchMatchSchema extends Schema with tests.DroppableSchema {
     ))
 }
 
+object BatchMatchSchema extends BatchMatchSchemaBase
+
 object DataModel {
   def startDbSession(conn: Function[AnyRef, java.sql.Connection]) : Unit = {
-    SessionFactory.concreteFactory =  Some(() => 
-      Session.create(conn.apply(null),  new org.squeryl.adapters.MySQLInnoDBAdapter))
+    SessionFactory.concreteFactory =  Some(() => {
+      val session = Session.create(conn.apply(null),  new org.squeryl.adapters.MySQLInnoDBAdapter)
+      session.setLogger(Console.println(_))
+      session
+    })
   }
   
-  def createBatchMatchResultSet(name: String, matcher: SGRMatcher) : BatchMatchResultSet = 
-      transaction {
-          val rs = new BatchMatchResultSet(name, matcher.getBaseQuery.toString)
+  def createBatchMatchResultSet(name: String, matcher: SGRMatcher, recordSetID: java.lang.Long) 
+      : BatchMatchResultSet = transaction {
+          val rsid = if (recordSetID.eq(null)) None else Some(recordSetID : Long)
+          val rs = new BatchMatchResultSet(name, matcher.getBaseQuery.toString, rsid)
           BatchMatchSchema.resultSets.insert(rs)
       }
   
@@ -114,13 +135,15 @@ class AccumulateResults(val matcher : SGRMatcher,
 }
 
 
-//object CreateSchema {
-//  def main(args : Array[String]) : Unit = {
-//    DataModel.startDbSession(java.sql.DriverManager.getConnection(
-//              "jdbc:mysql://localhost/kuplant", "root", "root"))
-//              
-//    transaction {
-//      BatchMatchSchema.create
-//    }
-//  }
-//}
+object CreateSchema {
+  def main(args : Array[String]) : Unit = {
+    DataModel.startDbSession(new Function[AnyRef, java.sql.Connection] {
+      def apply(foo: AnyRef) = java.sql.DriverManager.getConnection(
+              "jdbc:mysql://localhost/kuplant", "root", "root")
+    })
+    
+    transaction {
+      BatchMatchSchema.create
+    }
+  }
+}
