@@ -3,11 +3,11 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry exported="true" kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry exported="true" kind="lib" path="lib/squeryl_2.9.0.RC1-0.9.4-RC7x.jar"/>
 	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.14-bin.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/cglib-2.2.2.jar"/>
 	<classpathentry kind="lib" path="lib/guava-r09.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/scalatest-1.4-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="lib/squeryl_2.9.0-0.9.4-RC7.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/SGR"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/lucene-solr"/>
 	<classpathentry kind="output" path="bin"/>
