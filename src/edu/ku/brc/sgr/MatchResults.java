@@ -17,6 +17,8 @@
  */
 package edu.ku.brc.sgr;
 
+import java.util.Iterator;
+
 import com.google.common.collect.ImmutableList;
 
 /**
@@ -27,7 +29,7 @@ import com.google.common.collect.ImmutableList;
  * Created Date: Apr 11, 2011
  *
  */
-public class MatchResults
+public class MatchResults implements Iterable<Match>
 {
     public final ImmutableList<Match> matches;
     public final float maxScore; 
@@ -40,5 +42,11 @@ public class MatchResults
         this.maxScore = maxScore;
         this.matches = matches;
         this.matchedId = matchedId;
+    }
+
+    @Override
+    public Iterator<Match> iterator()
+    {
+        return matches.iterator();
     }
 }

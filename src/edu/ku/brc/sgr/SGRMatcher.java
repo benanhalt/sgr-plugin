@@ -70,6 +70,7 @@ public class SGRMatcher
         public int minTermFreq = 1;
         public boolean boostInterestingTerms = true;
         public boolean docSupplied = false;
+        public boolean debugQuery = false;
         public String similarityFields = 
             "collectors,collector_number,location,date_collected,date_split,scientific_name"; 
         public String returnedFields = "*,score";
@@ -89,6 +90,7 @@ public class SGRMatcher
             baseQuery.set(MoreLikeThisParams.QF, queryFields);
             baseQuery.set(MoreLikeThisParams.PRESERVE_FIELDS, true);
             baseQuery.set(CommonParams.FQ, filterQuery);
+            baseQuery.set(CommonParams.DEBUG_QUERY, debugQuery);
             
             return new SGRMatcher(serverUrl, baseQuery);
         }

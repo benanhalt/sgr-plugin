@@ -17,6 +17,9 @@
  */
 package edu.ku.brc.sgr;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.request.MoreLikeThisDocumentRequest;
@@ -27,6 +30,7 @@ import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.params.MoreLikeThisParams;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 
 /**
  * @author ben
@@ -73,8 +77,12 @@ public class MatchableRecord implements Matchable
             // TODO Auto-generated catch block
             throw new RuntimeException(e);
         }
+        
 
         final SolrDocumentList docs = resp.getResults();
+        Map<String, String> explain = resp.getExplainMap();
+        if (explain == null) explain = Maps.newHashMap(); 
+
         final ImmutableList.Builder<Match> msBuilder = ImmutableList.builder();
         final float maxScore = (docs != null) ? docs.getMaxScore() : 0.0f;
         if (docs != null)
@@ -83,7 +91,8 @@ public class MatchableRecord implements Matchable
             {
                 float score = (Float) doc.getFieldValue("score");
                 SGRRecord match = SGRRecord.fromSolrDocument(doc);
-                msBuilder.add(new Match(match, score));
+                String explained = explain.get(match.id);
+                msBuilder.add(new Match(match, score, explained));
             }
          }
         return new MatchResults(record.id, resp.getQTime(), 
