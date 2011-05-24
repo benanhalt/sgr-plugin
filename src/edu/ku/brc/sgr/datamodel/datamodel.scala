@@ -22,10 +22,11 @@ import sgr.SGRMatcher
 
 class BatchMatchResultSet(val name: String,
                           val query: String,
-                          val recordSetID: Option[Long]) 
+                          val recordSetID: Option[Long],
+                          val dbTableId: Option[Int]) 
     extends KeyedEntity[Long] {
   
-    def this() = this("", "", Some(0))
+    def this() = this("", "", Some(0), Some(0))
     
     val id : Long = 0
   
@@ -47,6 +48,10 @@ class BatchMatchResultSet(val name: String,
         case None => 0.0
         case Some(f) => f.asInstanceOf[Double]
       }
+    }
+    
+    def getAllItems() : java.util.List[BatchMatchResultItem] = transaction {
+      from(items)(i => select(i)).toList
     }
 }
                           
@@ -95,15 +100,34 @@ object DataModel {
     })
   }
   
-  def createBatchMatchResultSet(name: String, matcher: SGRMatcher, recordSetID: java.lang.Long) 
+  def createBatchMatchResultSet(name: String, matcher: SGRMatcher, 
+                                recordSetID: java.lang.Long, dbTableId: java.lang.Integer) 
       : BatchMatchResultSet = transaction {
           val rsid = if (recordSetID.eq(null)) None else Some(recordSetID : Long)
-          val rs = new BatchMatchResultSet(name, matcher.getBaseQuery.toString, rsid)
+          val dbTbId = if (dbTableId.eq(null)) None else Some(dbTableId : Int)
+          val rs = new BatchMatchResultSet(name, matcher.getBaseQuery.toString, rsid, dbTbId)
           BatchMatchSchema.resultSets.insert(rs)
       }
   
   def getBatchMatchResultSets() : java.util.List[BatchMatchResultSet] = transaction {
     from(BatchMatchSchema.resultSets)(select(_)).toList
+  }
+  
+  def getBatchMatchResultSetsFor(recordSetId: java.lang.Long, dbTableId : java.lang.Integer) 
+      : java.util.List[BatchMatchResultSet] = transaction {
+    
+    if (recordSetId == null) List()
+    else {
+        val rsid = Some(recordSetId : Long)
+        val dbTbId = if (dbTableId.eq(null)) None else Some(dbTableId : Int)
+        
+        from(BatchMatchSchema.resultSets)( 
+            s => where( 
+                s.recordSetID === rsid and s.dbTableId === dbTbId.?
+                ) 
+            select(s)  
+            ).toList
+    }
   }
 }
 
