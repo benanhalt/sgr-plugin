@@ -19,18 +19,52 @@ import sgr.BatchMatchResultAccumulator
 import sgr.MatchResults
 import sgr.SGRMatcher
 
+class MatchConfiguration(val name: String,
+                         val serverUrl: String,
+                         val nRows: Int,
+                         val boostInterestingTerms: Boolean,
+                         val similarityFields: String,
+                         val queryFields: String,
+                         val filterQuery: String)
+    extends KeyedEntity[Long] 
+{
+    val id : Long = 0
+    
+    lazy val resultSets : OneToMany[BatchMatchResultSet] =
+      BatchMatchSchema.matchConfigurationToResultSets.left(this)
+      
+    def createMatcherFactory() : SGRMatcher.Factory = {
+      val factory = SGRMatcher.getFactory
+      factory.serverUrl = serverUrl
+      factory.nRows = nRows
+      factory.boostInterestingTerms = boostInterestingTerms
+      factory.similarityFields = similarityFields
+      factory.queryFields = queryFields
+      factory.filterQuery = filterQuery
+      factory
+    }
+    
+    def delete() : Unit = transaction {
+      BatchMatchSchema.matchConfigurations.delete(this.id)
+    }
+}
+
 
 class BatchMatchResultSet(val name: String,
                           val query: String,
                           val recordSetID: Option[Long],
-                          val dbTableId: Option[Int]) 
+                          val dbTableId: Option[Int],
+                          val matchConfigurationId: Long) 
     extends KeyedEntity[Long] {
   
-    def this() = this("", "", Some(0), Some(0))
+    def this() = this("", "", Some(0), Some(0), 0)
     
     val id : Long = 0
   
     lazy val items: OneToMany[BatchMatchResultItem] = BatchMatchSchema.setToItems.left(this)
+    
+    lazy val matchConfiguration: ManyToOne[MatchConfiguration] = 
+      BatchMatchSchema.matchConfigurationToResultSets.right(this)  
     
     def nItems() : Long = transaction { items.Count }
     
@@ -68,18 +102,23 @@ class BatchMatchResultItem(val batchMatchResultSetId: Long,
                            
                            
 class BatchMatchSchemaBase extends Schema {
+    val matchConfigurations = table[MatchConfiguration]
     val resultSets = table[BatchMatchResultSet]
     val items = table[BatchMatchResultItem]
-    
-    val setToItems = 
-      oneToManyRelation(resultSets, items).
-      via((s, i) => s.id === i.batchMatchResultSetId)
     
     override def applyDefaultForeignKeyPolicy(foreignKeyDeclaration: ForeignKeyDeclaration) =
       foreignKeyDeclaration.constrainReference
       
+    val setToItems = 
+      oneToManyRelation(resultSets, items).
+      via((s, i) => s.id === i.batchMatchResultSetId)
+    
     setToItems.foreignKeyDeclaration.constrainReference(onDelete cascade)
     
+    val matchConfigurationToResultSets =
+      oneToManyRelation(matchConfigurations, resultSets).
+      via((mc, rs) => mc.id === rs.matchConfigurationId)
+      
     on(resultSets)(s => declare(
         s.id is(autoIncremented)
     ))
@@ -100,12 +139,31 @@ object DataModel {
     })
   }
   
+  def persistMatchConfiguration(name: String, matcherFactory: SGRMatcher.Factory) : 
+      MatchConfiguration = transaction {
+    val matcherConfig = new MatchConfiguration(name, 
+                                               matcherFactory.serverUrl, 
+                                               matcherFactory.nRows,
+                                               matcherFactory.boostInterestingTerms,
+                                               matcherFactory.similarityFields,
+                                               matcherFactory.queryFields,
+                                               matcherFactory.filterQuery)
+    BatchMatchSchema.matchConfigurations.insert(matcherConfig);
+  }
+  
+  def getMatcherConfigurations() : java.util.List[MatchConfiguration] = transaction {
+    from(BatchMatchSchema.matchConfigurations)(select(_)).toList
+  }
+  
   def createBatchMatchResultSet(name: String, matcher: SGRMatcher, 
-                                recordSetID: java.lang.Long, dbTableId: java.lang.Integer) 
+                                recordSetID: java.lang.Long, 
+                                dbTableId: java.lang.Integer,
+                                matchConfigId: Long
+                                ) 
       : BatchMatchResultSet = transaction {
           val rsid = if (recordSetID.eq(null)) None else Some(recordSetID : Long)
           val dbTbId = if (dbTableId.eq(null)) None else Some(dbTableId : Int)
-          val rs = new BatchMatchResultSet(name, matcher.getBaseQuery.toString, rsid, dbTbId)
+          val rs = new BatchMatchResultSet(name, matcher.getBaseQuery.toString, rsid, dbTbId, matchConfigId)
           BatchMatchSchema.resultSets.insert(rs)
       }
   
