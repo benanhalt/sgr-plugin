@@ -6,8 +6,8 @@
 	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.14-bin.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/cglib-2.2.2.jar"/>
 	<classpathentry kind="lib" path="lib/guava-r09.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/scalatest-1.4-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="lib/squeryl_2.9.0-0.9.4-RC7.jar"/>
+	<classpathentry kind="lib" path="lib/scalatest-1.4-SNAPSHOT.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/squeryl_2.9.0-0.9.4-RC7.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/SGR"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/lucene-solr"/>
 	<classpathentry kind="output" path="bin"/>

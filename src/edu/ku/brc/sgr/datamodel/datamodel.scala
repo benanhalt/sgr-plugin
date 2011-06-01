@@ -47,6 +47,8 @@ class MatchConfiguration(val name: String,
     def delete() : Unit = transaction {
       BatchMatchSchema.matchConfigurations.delete(this.id)
     }
+    
+    override def toString = name
 }
 
 
@@ -87,6 +89,10 @@ class BatchMatchResultSet(val name: String,
     def getAllItems() : java.util.List[BatchMatchResultItem] = transaction {
       from(items)(i => select(i)).toList
     }
+    
+    def getMatchConfiguration() : MatchConfiguration =  transaction(matchConfiguration.single)
+    
+    override def toString = name
 }
                           
 class BatchMatchResultItem(val batchMatchResultSetId: Long,
