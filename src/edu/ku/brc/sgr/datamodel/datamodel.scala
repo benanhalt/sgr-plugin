@@ -19,7 +19,8 @@ import sgr.BatchMatchResultAccumulator
 import sgr.MatchResults
 import sgr.SGRMatcher
 
-class MatchConfiguration(val name: String,
+class MatchConfiguration(var name: String,
+                         var remarks: String,
                          val serverUrl: String,
                          val nRows: Int,
                          val boostInterestingTerms: Boolean,
@@ -48,18 +49,25 @@ class MatchConfiguration(val name: String,
       BatchMatchSchema.matchConfigurations.delete(this.id)
     }
     
+    def updateProperties(newName: String, newRemarks: String) : Unit = transaction {
+      name = newName
+      remarks = newRemarks
+      BatchMatchSchema.matchConfigurations.update(this)
+    }
+    
     override def toString = name
 }
 
 
-class BatchMatchResultSet(val name: String,
+class BatchMatchResultSet(var name: String,
+                          var remarks: String,
                           val query: String,
                           val recordSetID: Option[Long],
                           val dbTableId: Option[Int],
                           val matchConfigurationId: Long) 
     extends KeyedEntity[Long] {
   
-    def this() = this("", "", Some(0), Some(0), 0)
+    def this() = this("", "", "", Some(0), Some(0), 0)
     
     val id : Long = 0
   
@@ -91,6 +99,12 @@ class BatchMatchResultSet(val name: String,
     }
     
     def getMatchConfiguration() : MatchConfiguration =  transaction(matchConfiguration.single)
+    
+    def updateProperties(newName: String, newRemarks: String) : Unit = transaction {
+      name = newName
+      remarks = newRemarks
+      BatchMatchSchema.resultSets.update(this)
+    }
     
     override def toString = name
 }
@@ -147,7 +161,7 @@ object DataModel {
   
   def persistMatchConfiguration(name: String, matcherFactory: SGRMatcher.Factory) : 
       MatchConfiguration = transaction {
-    val matcherConfig = new MatchConfiguration(name, 
+    val matcherConfig = new MatchConfiguration(name, "",
                                                matcherFactory.serverUrl, 
                                                matcherFactory.nRows,
                                                matcherFactory.boostInterestingTerms,
@@ -169,7 +183,8 @@ object DataModel {
       : BatchMatchResultSet = transaction {
           val rsid = if (recordSetID.eq(null)) None else Some(recordSetID : Long)
           val dbTbId = if (dbTableId.eq(null)) None else Some(dbTableId : Int)
-          val rs = new BatchMatchResultSet(name, matcher.getBaseQuery.toString, rsid, dbTbId, matchConfigId)
+          val rs = new BatchMatchResultSet(name, "", matcher.getBaseQuery.toString, rsid, 
+              dbTbId, matchConfigId)
           BatchMatchSchema.resultSets.insert(rs)
       }
   
