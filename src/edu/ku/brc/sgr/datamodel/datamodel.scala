@@ -27,8 +27,8 @@ class MatchConfiguration(var name: String,
                          val similarityFields: String,
                          val queryFields: String,
                          val filterQuery: String)
-    extends KeyedEntity[Long] 
-{
+    extends KeyedEntity[Long] {
+  
     val id : Long = 0
     
     lazy val resultSets : OneToMany[BatchMatchResultSet] =
@@ -139,12 +139,16 @@ class BatchMatchSchemaBase extends Schema {
       oneToManyRelation(matchConfigurations, resultSets).
       via((mc, rs) => mc.id === rs.matchConfigurationId)
       
-    on(resultSets)(s => declare(
-        s.id is(autoIncremented)
+    on(matchConfigurations)(mc => declare(
+        mc.remarks is(dbType("text")),
+        mc.queryFields is(dbType("text")),
+        mc.serverUrl is(dbType("text")),
+        mc.similarityFields is(dbType("text"))
     ))
-
-    on(items)(i => declare(
-        i.id is(autoIncremented)
+      
+    on(resultSets)(s => declare(
+        s.query is(dbType("text")),
+        s.remarks is(dbType("text"))
     ))
 }
 
