@@ -82,8 +82,8 @@ class BatchMatchResultSet(var name: String,
       BatchMatchSchema.resultSets.delete(this.id)
     }
     
-    def getValues() : Array[Double] = transaction {
-      from(items)(i => select(i.maxScore)) map(_.asInstanceOf[Double]) toArray
+    def getValues(multiplier: Double = 1.0) : Array[Double] = transaction {
+      from(items)(i => select(i.maxScore)) map(_.asInstanceOf[Double] * multiplier) toArray
     }
     
     def getMax() : Double = transaction {
