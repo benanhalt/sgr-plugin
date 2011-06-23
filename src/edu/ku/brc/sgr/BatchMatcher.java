@@ -97,13 +97,14 @@ public class BatchMatcher
             try
             {
                 jobs.addWork(item);
-            } catch (Exception e)
+            } catch (InterruptedException e)
             {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
                 jobs.stopThreads();
                 return;
-            } 
+            } catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
         }
         
         jobs.waitForAllJobsToComplete();

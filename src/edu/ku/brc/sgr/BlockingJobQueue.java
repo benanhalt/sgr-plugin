@@ -108,15 +108,8 @@ public class BlockingJobQueue<T>
         }
         
         currentJobsQueued.incrementAndGet();
-        try
-        {
-            workQueue.put(id);
-            totalJobsQueued.incrementAndGet();
-        } catch (InterruptedException e)
-        {
-            currentJobsQueued.decrementAndGet();
-            e.printStackTrace();
-        }
+        workQueue.put(id);
+        totalJobsQueued.incrementAndGet();
     }
     
     synchronized public void waitForAllJobsToComplete()
