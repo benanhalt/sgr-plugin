@@ -106,6 +106,16 @@ class BatchMatchResultSet(var name: String,
       BatchMatchSchema.resultSets.update(this)
     }
     
+    def getRecordSetId() : java.lang.Long = recordSetID match {
+      case None => null
+      case Some(id) => id 
+    }
+    
+    def getdbTableId() : java.lang.Integer = dbTableId match {
+      case None => null
+      case Some(id) => id
+    }
+    
     override def toString = name
 }
                           
