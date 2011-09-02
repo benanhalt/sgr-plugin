@@ -3,6 +3,8 @@ package edu.ku.brc.sgr.datamodel
 import scala.collection.JavaConversions._
 
 import java.sql.Connection
+import java.sql.Timestamp
+import java.util.Date
 
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.{Schema, KeyedEntity, Session, SessionFactory, ForeignKeyDeclaration} 
@@ -70,6 +72,8 @@ class BatchMatchResultSet(var name: String,
     def this() = this("", "", "", Some(0), Some(0), 0)
     
     val id : Long = 0
+    
+    val insertTime = new Timestamp((new Date).getTime)
   
     lazy val items: OneToMany[BatchMatchResultItem] = BatchMatchSchema.setToItems.left(this)
     
@@ -132,9 +136,9 @@ class BatchMatchResultItem(val batchMatchResultSetId: Long,
                            
                            
 class BatchMatchSchemaBase extends Schema {
-    val matchConfigurations = table[MatchConfiguration]
-    val resultSets = table[BatchMatchResultSet]
-    val items = table[BatchMatchResultItem]
+    val matchConfigurations = table[MatchConfiguration]("sgrMatchConfiguration")
+    val resultSets = table[BatchMatchResultSet]("sgrBatchMatchResultSet")
+    val items = table[BatchMatchResultItem]("sgrBatchMatchResultItem")
     
     override def applyDefaultForeignKeyPolicy(foreignKeyDeclaration: ForeignKeyDeclaration) =
       foreignKeyDeclaration.constrainReference
