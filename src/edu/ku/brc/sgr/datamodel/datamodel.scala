@@ -172,7 +172,7 @@ object DataModel {
   def startDbSession(conn: Function[AnyRef, java.sql.Connection]) : Unit = {
     SessionFactory.concreteFactory =  Some(() => {
       val session = Session.create(conn.apply(null),  new org.squeryl.adapters.MySQLInnoDBAdapter)
-      session.setLogger(Console.println(_))
+//      session.setLogger(Console.println(_))
       session
     })
   }
