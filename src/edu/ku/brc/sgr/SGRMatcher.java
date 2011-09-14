@@ -51,10 +51,17 @@ public class SGRMatcher
     public static Factory getFactory() { return new Factory(); }
     
     public SolrQuery getBaseQuery() { return baseQuery.getCopy(); }
-    
+
     public MatchResults match(Matchable matchable)
     {
-        return matchable.doMatch(server, getBaseQuery());
+        return match(matchable, null);
+    }
+
+    public MatchResults match(Matchable matchable, Integer nRows)
+    {
+        SolrQuery query = getBaseQuery();
+        if (nRows != null) query.setRows(nRows);
+        return matchable.doMatch(server, query);
     }
     
     public boolean sameQueryAs(String query)
