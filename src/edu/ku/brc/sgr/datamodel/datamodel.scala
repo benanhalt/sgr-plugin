@@ -57,6 +57,18 @@ class MatchConfiguration(var name: String,
       BatchMatchSchema.matchConfigurations.update(this)
     }
     
+    def toXML = 
+          <MatchConfiguration>
+              <name>{ name }</name>
+              <remarks>{ remarks }</remarks>
+              <serverUrl>{ serverUrl }</serverUrl>
+              <nRows>{ nRows }</nRows>
+              <boostInterestingTerms>{ boostInterestingTerms }</boostInterestingTerms>
+              <similarityFields>{ similarityFields }</similarityFields>
+              <queryFields>{ queryFields }</queryFields>
+              <filterQuery>{ filterQuery }</filterQuery>
+          </MatchConfiguration>
+    
     override def toString = name
 }
 
@@ -178,8 +190,11 @@ object DataModel {
   }
   
   def persistMatchConfiguration(name: String, matcherFactory: SGRMatcher.Factory) : 
+      MatchConfiguration = persistMatchConfiguration(name, "", matcherFactory)
+  
+  def persistMatchConfiguration(name: String, remarks: String, matcherFactory: SGRMatcher.Factory) : 
       MatchConfiguration = transaction {
-    val matcherConfig = new MatchConfiguration(name, "",
+    val matcherConfig = new MatchConfiguration(name, remarks,
                                                matcherFactory.serverUrl, 
                                                matcherFactory.nRows,
                                                matcherFactory.boostInterestingTerms,
@@ -187,6 +202,34 @@ object DataModel {
                                                matcherFactory.queryFields,
                                                matcherFactory.filterQuery)
     BatchMatchSchema.matchConfigurations.insert(matcherConfig);
+  }
+  
+  def importMatchConfigXML(xml: scala.xml.Node) : MatchConfiguration = transaction {
+    val name = (xml \ "name").text
+    val remarks = (xml \ "remarks").text
+    persistMatchConfiguration(name, remarks, matcherFactoryFromXML(xml))
+  }
+  
+  def matcherFactoryFromXML(xml: scala.xml.Node) : SGRMatcher.Factory = {
+    val mf = new SGRMatcher.Factory
+    mf.boostInterestingTerms = (xml \ "boostInterestingTerms").text == "true"
+    mf.filterQuery = (xml \ "filterQuery").text
+    mf.nRows = Integer.valueOf((xml \ "nRows").text)
+    mf.queryFields = (xml \ "queryFields").text
+    mf.serverUrl = (xml \ "serverUrl").text
+    mf.similarityFields = (xml \ "similarityFields").text
+    mf
+  }
+  
+  def exportMatchConfigurations(mcs: java.util.Collection[MatchConfiguration]) = 
+      <MatchConfigurations>
+          { for (mc <- mcs) yield mc.toXML }
+      </MatchConfigurations>
+  
+  def importMatchConfigurations(file: java.io.File) : java.util.Collection[MatchConfiguration] = {
+      val xmlIn = xml.XML.loadFile(file)
+      val mcs = xmlIn \ "MatchConfiguration" 
+      mcs map importMatchConfigXML
   }
   
   def getMatcherConfigurations() : java.util.List[MatchConfiguration] = transaction {
