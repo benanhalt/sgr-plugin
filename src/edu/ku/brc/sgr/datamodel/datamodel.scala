@@ -28,7 +28,7 @@ class MatchConfiguration(var name: String,
                          val boostInterestingTerms: Boolean,
                          val similarityFields: String,
                          val queryFields: String,
-                         val filterQuery: String)
+                         var filterQuery: String)
     extends KeyedEntity[Long] {
   
     val id : Long = 0
@@ -54,6 +54,11 @@ class MatchConfiguration(var name: String,
     def updateProperties(newName: String, newRemarks: String) : Unit = transaction {
       name = newName
       remarks = newRemarks
+      BatchMatchSchema.matchConfigurations.update(this)
+    }
+    
+    def updateFilterQuery(newFilterQuery: String) : Unit = transaction {
+      filterQuery = newFilterQuery
       BatchMatchSchema.matchConfigurations.update(this)
     }
     
