@@ -153,9 +153,9 @@ class BatchMatchResultItem(val batchMatchResultSetId: Long,
                            
                            
 class BatchMatchSchemaBase extends Schema {
-    val matchConfigurations = table[MatchConfiguration]("sgrMatchConfiguration")
-    val resultSets = table[BatchMatchResultSet]("sgrBatchMatchResultSet")
-    val items = table[BatchMatchResultItem]("sgrBatchMatchResultItem")
+    val matchConfigurations = table[MatchConfiguration]("sgrmatchconfiguration")
+    val resultSets = table[BatchMatchResultSet]("sgrbatchmatchresultset")
+    val items = table[BatchMatchResultItem]("sgrbatchmatchresultitem")
     
     override def applyDefaultForeignKeyPolicy(foreignKeyDeclaration: ForeignKeyDeclaration) =
       foreignKeyDeclaration.constrainReference
