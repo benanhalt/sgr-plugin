@@ -233,8 +233,11 @@ object DataModel {
   
   def importMatchConfigurations(file: java.io.File) : java.util.Collection[MatchConfiguration] = {
       val xmlIn = xml.XML.loadFile(file)
-      val mcs = xmlIn \ "MatchConfiguration" 
-      mcs map importMatchConfigXML
+      val mcs = xmlIn \ "MatchConfiguration"
+      val existingNames = transaction {
+         from(BatchMatchSchema.matchConfigurations)(mc => select(mc.name)).toSet
+      }
+      mcs filter(mc => !existingNames.contains((mc \ "name").text)) map importMatchConfigXML
   }
   
   def getMatcherConfigurations() : java.util.List[MatchConfiguration] = transaction {
