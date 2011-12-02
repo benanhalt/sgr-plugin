@@ -109,4 +109,17 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+<distributionManagement>
+  <repository>
+    <id>repo</id>
+    <url>https://github.com/benanhalt/anhalt-mvn-repo/raw/master/releases</url>
+  </repository>
+  <snapshotRepository>
+    <id>repo</id>
+    <name>Repository Name</name>
+    <url>>https://github.com/benanhalt/anhalt-mvn-repo/raw/master/snapshots</url>
+  </snapshotRepository>
+</distributionManagement>
+
 </project>
