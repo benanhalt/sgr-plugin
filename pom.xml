@@ -10,14 +10,6 @@
   <name>sgr</name>
   <url>http://maven.apache.org</url>
 
-  <repositories>
-    <repository>
-      <id>scala-tools.org</id>
-      <name>Scala-tools Maven2 Repository</name>
-      <url>http://scala-tools.org/repo-releases</url>
-    </repository>
-  </repositories>
-
   <pluginRepositories>
     <pluginRepository>
       <id>scala-tools.org</id>
@@ -68,13 +60,13 @@
     <dependency>
       <groupId>org.apache.solr</groupId>
       <artifactId>solr-solrj</artifactId>
-      <version>3.4-SNAPSHOT</version>
+      <version>3.4-specify</version>
     </dependency>
     
     <dependency>
       <groupId>org.apache.solr</groupId>
       <artifactId>solr-core</artifactId>
-      <version>3.4-SNAPSHOT</version>
+      <version>3.4-specify</version>
     </dependency>
 
     <dependency>
@@ -110,16 +102,29 @@
     </dependency>
   </dependencies>
 
-<distributionManagement>
-  <repository>
-    <id>repo</id>
-    <url>https://github.com/benanhalt/anhalt-mvn-repo/raw/master/releases</url>
-  </repository>
-  <snapshotRepository>
-    <id>repo</id>
-    <name>Repository Name</name>
-    <url>>https://github.com/benanhalt/anhalt-mvn-repo/raw/master/snapshots</url>
-  </snapshotRepository>
-</distributionManagement>
+  <distributionManagement>
+    <repository>
+      <id>repo</id>
+      <url>https://github.com/benanhalt/anhalt-mvn-repo/raw/master/releases</url>
+    </repository>
+    <snapshotRepository>
+      <id>repo</id>
+      <name>Repository Name</name>
+      <url>>https://github.com/benanhalt/anhalt-mvn-repo/raw/master/snapshots</url>
+    </snapshotRepository>
+  </distributionManagement>
+
+  <repositories>
+    <repository>
+      <id>anhalt-releases</id>
+      <url>https://github.com/benanhalt/anhalt-mvn-repo/raw/master/releases</url>
+    </repository>
+
+    <repository>
+      <id>scala-tools.org</id>
+      <name>Scala-tools Maven2 Repository</name>
+      <url>http://scala-tools.org/repo-releases</url>
+    </repository>
+  </repositories>
 
 </project>
